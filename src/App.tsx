@@ -3,6 +3,7 @@ import reactLogo from "./assets/react.svg";
 import "./App.css";
 import { useState } from "react";
 import { css } from "@emotion/react";
+import { useEffect } from "react";
 
 const COLUMN_BACKGROUND_COLOR = {
   todo: "#C9AF97",
@@ -26,13 +27,13 @@ const kanbanCardStyle = css `
 const kanbanCardTitleStyle = css `min-height: 3rem;`;
 
 const initialTodoList = [
-  { title: "开发任务-1", status: "22-05-22 18:15" },
-  { title: "开发任务-3", status: "22-05-22 18:15" },
-  { title: "开发任务-5", status: "22-05-22 18:15" },
-  { title: "开发任务-1", status: "22-05-22 18:15" },
-  { title: "开发任务-3", status: "22-05-22 18:15" },
-  { title: "开发任务-5", status: "22-05-22 18:15" },
-  { title: "测试任务-3", status: "22-05-22 18:15" },
+  { title: "开发任务-1", status: "2025-10-19 22:45" },
+  { title: "开发任务-3", status: "2025-10-19 20:45" },
+  { title: "开发任务-5", status: "2025-10-18 23:45" },
+  { title: "开发任务-1", status: "2025-10-19 22:45" },
+  { title: "开发任务-3", status: "2025-10-19 22:45" },
+  { title: "开发任务-5", status: "2025-10-19 22:45" },
+  { title: "测试任务-3", status: "2025-10-19 22:45" },
 ];
 
 const ongoingList = [
@@ -111,11 +112,39 @@ const KanbanColumn = ({
   );
 };
 
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+const UPDATE_INTERVAL = MINUTE;
+
 const KanbanCard = ({ title, status }: { title: string; status: string }) => {
+  const [displayTime, setDisplayTime] = useState(status);
+  useEffect(() => {
+    const updateDisplayTime = () => {
+      const timePassed = new Date().getTime() - new Date(status).getTime( );
+      let relativeTime = "刚刚";
+      if (MINUTE <= timePassed && timePassed < HOUR) {
+        relativeTime = `${Math.ceil(timePassed / MINUTE)} 分钟前`;
+      } else if (HOUR <= timePassed && timePassed < DAY) {
+        relativeTime = `${Math.ceil(timePassed / HOUR)} 小时前`;
+      } else if (DAY <= timePassed) {
+        relativeTime = `${Math.ceil(timePassed / DAY)} 天前`;
+      }
+      setDisplayTime(relativeTime);
+    };
+    const intervalId = setInterval(updateDisplayTime, UPDATE_INTERVAL);
+
+    updateDisplayTime();
+
+    return function cleanup() {
+      clearInterval(intervalId);
+    };
+  }, [status]);
+  
   return (
     <li css={kanbanCardStyle}>
       <div css={kanbanCardTitleStyle}>{title}</div>
-      <div css={css `text-align: right; font-size: 0.8rem; color: #333;`}>{status}</div>
+      <div css={css `text-align: right; font-size: 0.8rem; color: #333;`}>{displayTime}</div>
     </li>
   );
 };
