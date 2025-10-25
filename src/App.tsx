@@ -3,7 +3,7 @@ import reactLogo from "./assets/react.svg";
 import "./App.css";
 import { useState } from "react";
 import { css } from "@emotion/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 const COLUMN_BACKGROUND_COLOR = {
   todo: "#C9AF97",
@@ -151,6 +151,12 @@ const KanbanCard = ({ title, status }: { title: string; status: string }) => {
 
 const KanbanNewCard = ({ onSubmit }: { onSubmit: (title: string) => void }) => {
   const [title, setTitle] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   const handleChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(evt.target.value);
@@ -180,7 +186,8 @@ const KanbanNewCard = ({ onSubmit }: { onSubmit: (title: string) => void }) => {
           value={title}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-        />
+          ref={inputRef}
+          />
       </div>
     </li>
   );
