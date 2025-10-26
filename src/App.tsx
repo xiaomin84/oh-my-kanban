@@ -5,10 +5,12 @@ import { useState } from "react";
 import { css } from "@emotion/react";
 import { useEffect, useRef } from "react";
 
+const DATA_STORE_KEY = 'kanban-data-store';
 const COLUMN_BACKGROUND_COLOR = {
   todo: "#C9AF97",
   ongoing: "#FFE799",
   done: "#C0E8BA",
+  loading: "#E3E3E3",
 };
 
 const kanbanCardStyle = css `
@@ -36,13 +38,13 @@ const initialTodoList = [
   { title: "测试任务-3", status: "2025-10-19 22:45" },
 ];
 
-const ongoingList = [
+const initialOngoingList = [
   { title: "开发任务-4", status: "22-05-22 18:15" },
   { title: "开发任务-6", status: "22-05-22 18:15" },
   { title: "测试任务-2", status: "22-05-22 18:15" },
 ];
 
-const doneList = [
+const initialDoneList = [
   { title: "开发任务-2", status: "22-05-22 18:15" },
   { title: "测试任务-1", status: "22-05-22 18:15" },
 ];
@@ -196,6 +198,26 @@ const KanbanNewCard = ({ onSubmit }: { onSubmit: (title: string) => void }) => {
 function App() {
   const [showAdd, setShowAdd] = useState(false);
   const [todoList, setTodoList] = useState(initialTodoList);
+  const [ongoingList, setOngoingList] = useState(initialOngoingList);
+  const [doneList, setDoneList] = useState(initialDoneList);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const data = window.localStorage.getItem(DATA_STORE_KEY);
+    setInterval(() => {
+      if (data) {
+        const { todoList, ongoingList, doneList } = JSON.parse(data);
+        setTodoList(todoList);
+        setOngoingList(ongoingList);
+        setDoneList(doneList);
+      }
+      setLoading(false);
+    }, 1000);
+    
+  }, []);
+  const handleSaveAll = () => { 
+    const data = JSON.stringify({ todoList, ongoingList, doneList }); 
+    window.localStorage.setItem(DATA_STORE_KEY, data);
+  };
 
   const handleAdd = (_evt: React.MouseEvent) => {
     setShowAdd(true);
@@ -212,11 +234,14 @@ function App() {
     <>
       <div className="App">
         <header className="App-header">
-          <h1>我的看板</h1>
+          <button onClick={handleSaveAll}>保存所有卡片状态</button>
+          <h1>我的看板 </h1>
           <img src={reactLogo} className="App-logo" alt="logo" />
         </header>
         <KanbanBoard>
-          <KanbanColumn
+          {loading ? (<KanbanColumn bgColor={COLUMN_BACKGROUND_COLOR.loading} title="加载中"><></></KanbanColumn>) :
+           ( <>
+            <KanbanColumn
             bgColor={COLUMN_BACKGROUND_COLOR.todo}
             title={
               <>
@@ -226,7 +251,7 @@ function App() {
                 </button>
               </>
             }
-          >
+            >
             {showAdd && <KanbanNewCard onSubmit={handleSubmit} />}
             {todoList.map((props, index) => (
               <KanbanCard key={index} {...props} />
@@ -242,6 +267,8 @@ function App() {
               <KanbanCard key={index} {...props} />
             ))}
           </KanbanColumn>
+          </>)
+          }
         </KanbanBoard>
       </div>
     </>
