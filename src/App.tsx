@@ -6,6 +6,10 @@ import { css } from "@emotion/react";
 import { useEffect, useRef } from "react";
 
 const DATA_STORE_KEY = 'kanban-data-store';
+const COLUMN_KEY_TODO = 'todo';
+const COLUMN_KEY_ONGOING = 'ongoing';
+const COLUMN_KEY_DONE = 'done';
+
 const COLUMN_BACKGROUND_COLOR = {
   todo: "#C9AF97",
   ongoing: "#FFE799",
@@ -66,15 +70,47 @@ const KanbanBoard = ({ children }: { children: React.ReactNode }) => (
 const KanbanColumn = ({
   children,
   bgColor,
-  title,
+  title, 
+  setIsDragSource = () => {},
+  setIsDragTarget = () => {},
+  onDropEvt
 }: {
   children: React.ReactNode;
   bgColor: string;
   title: React.ReactNode;
+  setIsDragSource?: (isSrc: boolean) => void;
+  setIsDragTarget?: (isTarget: boolean) => void;
+  onDropEvt?: (evt: React.DragEvent<HTMLElement>) => void;
 }) => {
   return (
     <section
-      css={css `
+      onDragStart={() => {
+        setIsDragSource(true);
+      }}
+      onDragOver={(evt) => {
+        evt.preventDefault();
+        evt.dataTransfer.dropEffect = "move";
+        setIsDragTarget(true);
+      }}
+      onDragLeave={(evt) => {
+        evt.preventDefault();
+        evt.dataTransfer.dropEffect = "none";
+        setIsDragTarget(false);
+      }}
+      onDrop={(evt) => {
+        console.log('onDrop triggered');
+        evt.preventDefault();
+        if (onDropEvt) {
+          onDropEvt(evt);
+        }
+      }}
+      onDragEnd={(evt) => {
+        evt.preventDefault();
+        setIsDragSource(false);
+        setIsDragTarget(false);
+      }}
+
+      css={css`
         flex: 1;
         border: 1px solid gray;
         border-radius: 1rem;
@@ -98,7 +134,7 @@ const KanbanColumn = ({
             font-size: 1rem;
           }
         }
-        
+
         & > ul {
           flex: 1;
           flex-basis: 0;
@@ -119,7 +155,7 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 const UPDATE_INTERVAL = MINUTE;
 
-const KanbanCard = ({ title, status }: { title: string; status: string }) => {
+const KanbanCard = ({ title, status, onDragStart = () => {} }: { title: string; status: string; onDragStart?: (evt: React.DragEvent<HTMLLIElement>) => void }) => {
   const [displayTime, setDisplayTime] = useState(status);
   useEffect(() => {
     const updateDisplayTime = () => {
@@ -143,8 +179,16 @@ const KanbanCard = ({ title, status }: { title: string; status: string }) => {
     };
   }, [status]);
   
+  const handleDragStart = (evt: React.DragEvent<HTMLLIElement>) => {
+    evt.dataTransfer.effectAllowed = "move";
+    evt.dataTransfer.setData("text/plain", title);
+    if (onDragStart) {
+      onDragStart(evt);
+    }
+  };
+
   return (
-    <li css={kanbanCardStyle}>
+    <li css={kanbanCardStyle} draggable={true} onDragStart={handleDragStart}>
       <div css={kanbanCardTitleStyle}>{title}</div>
       <div css={css `text-align: right; font-size: 0.8rem; color: #333;`}>{displayTime}</div>
     </li>
@@ -201,9 +245,69 @@ function App() {
   const [ongoingList, setOngoingList] = useState(initialOngoingList);
   const [doneList, setDoneList] = useState(initialDoneList);
   const [loading, setLoading] = useState(true);
+  const [draggedItem, setDraggedItem] = useState<{ title: string; status: string } | null>(null);
+  const [dragSource, setDragSource] = useState<string | null>(null);
+  const [dragTarget, setDragTarget] = useState<string | null>(null);
+
+  const callCountRef = useRef(0);
+  const handleDrop = () => { 
+    console.log('handleDrop called', { draggedItem, dragSource, dragTarget });
+    console.log('handleDrop call count:', ++callCountRef.current);
+    if (!draggedItem )
+       { 
+          console.log('Early return due to condition1');
+          return; 
+      }
+
+      if (!dragSource )
+      {
+        console.log('Early return due to condition2');
+        return;
+      }
+
+      if (!dragTarget )
+      {
+        console.log('Early return due to condition3');
+        return;
+      }
+
+      if (dragSource === dragTarget)
+      {
+        console.log('Early return due to condition4');
+        return;
+      }
+
+    const updaters: Record<string, React.Dispatch<React.SetStateAction<{ title: string; status: string; }[]>>> = { 
+      [COLUMN_KEY_TODO]: setTodoList, 
+      [COLUMN_KEY_ONGOING]: setOngoingList, 
+      [COLUMN_KEY_DONE]: setDoneList 
+    } 
+    if (dragSource) { 
+      updaters[dragSource]((currentStat) => currentStat.filter((item) => !Object.is(item, draggedItem)) ); 
+    } 
+    if (dragTarget) { 
+      console.log('dragTarget value:', dragTarget);
+      console.log('updaters keys:', Object.keys(updaters));
+      console.log('updaters[dragTarget] exists:', !!updaters[dragTarget]);
+      console.log('Before update - draggedItem:', draggedItem);
+      updaters[dragTarget]((currentStat) => {
+        console.log('Inside updater - currentStat:', currentStat);
+        // 检查是否已经包含拖拽的项目，避免重复添加
+        if (currentStat.some(item => Object.is(item, draggedItem))) {
+          console.log('Item already exists, skipping');
+          return currentStat;
+        }
+        const newStat = [draggedItem, ...currentStat];
+        console.log('Inside updater - newStat:', newStat);
+        return newStat;
+      });
+      console.log('After update - doneList:', doneList);
+    } 
+  };
+ 
   useEffect(() => {
     const data = window.localStorage.getItem(DATA_STORE_KEY);
-    setInterval(() => {
+    setTimeout(() => {
       if (data) {
         const { todoList, ongoingList, doneList } = JSON.parse(data);
         setTodoList(todoList);
@@ -219,7 +323,7 @@ function App() {
     window.localStorage.setItem(DATA_STORE_KEY, data);
   };
 
-  const handleAdd = (_evt: React.MouseEvent) => {
+  const handleAdd = () => {
     setShowAdd(true);
   };
 
@@ -251,20 +355,29 @@ function App() {
                 </button>
               </>
             }
+            setIsDragSource={(isSrc) => setDragSource(isSrc ? COLUMN_KEY_TODO : null)}
+            setIsDragTarget={(isTarget) => setDragTarget(isTarget ? COLUMN_KEY_TODO : null)}
+            onDropEvt={handleDrop}
             >
             {showAdd && <KanbanNewCard onSubmit={handleSubmit} />}
             {todoList.map((props, index) => (
-              <KanbanCard key={index} {...props} />
+              <KanbanCard key={index} {...props} onDragStart={() => setDraggedItem(props)} />
             ))}
           </KanbanColumn>
-          <KanbanColumn bgColor={COLUMN_BACKGROUND_COLOR.ongoing} title="进行中">
+          <KanbanColumn bgColor={COLUMN_BACKGROUND_COLOR.ongoing} title="进行中"
+                      setIsDragSource={(isSrc) => setDragSource(isSrc ? COLUMN_KEY_ONGOING : null)}
+                      setIsDragTarget={(isTarget) => setDragTarget(isTarget ? COLUMN_KEY_ONGOING : null)}
+                      onDropEvt={handleDrop}>
             {ongoingList.map((props, index) => (
-              <KanbanCard key={index} {...props} />
+              <KanbanCard key={index} {...props} onDragStart={()=>setDraggedItem(props)} />
             ))}
           </KanbanColumn>
-          <KanbanColumn bgColor={COLUMN_BACKGROUND_COLOR.done} title="已完成">
+          <KanbanColumn bgColor={COLUMN_BACKGROUND_COLOR.done} title="已完成"
+                      setIsDragSource={(isSrc) => setDragSource(isSrc ? COLUMN_KEY_DONE : null)}
+                      setIsDragTarget={(isTarget) => setDragTarget(isTarget ? COLUMN_KEY_DONE : null)}
+                      onDropEvt={handleDrop}>
             {doneList.map((props, index) => (
-              <KanbanCard key={index} {...props} />
+              <KanbanCard key={index} {...props} onDragStart={()=>setDraggedItem(props)} />
             ))}
           </KanbanColumn>
           </>)
