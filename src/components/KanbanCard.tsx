@@ -8,7 +8,7 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 const UPDATE_INTERVAL = MINUTE;
 
-interface KanbanCardProps {
+export interface KanbanCardProps {
   title: string;
   status: string;
   onDragStart?: (evt: React.DragEvent<HTMLLIElement>) => void;

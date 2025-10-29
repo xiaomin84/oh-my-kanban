@@ -2,9 +2,10 @@
 import { useState, useEffect, useRef } from "react";
 import { css } from "@emotion/react";
 import { kanbanCardStyle, kanbanCardTitleStyle } from "../styles/cardStyles";
+import type { KanbanCardProps } from "./KanbanCard";
 
 interface KanbanNewCardProps {
-  onSubmit: (title: string) => void;
+  onSubmit: (newCard: KanbanCardProps) => void;
 }
 
 export default function KanbanNewCard({ onSubmit }: KanbanNewCardProps) {
@@ -22,7 +23,8 @@ export default function KanbanNewCard({ onSubmit }: KanbanNewCardProps) {
 
   const handleKeyDown = (evt: React.KeyboardEvent<HTMLInputElement>) => {
     if (evt.key === "Enter") {
-      onSubmit(title);
+      const newCard = { title, status: new Date().toISOString() };
+      onSubmit(newCard);
     }
   };
 
