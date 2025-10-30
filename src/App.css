@@ -52,3 +52,12 @@
   padding: 2rem 0;
 }
 
+
+.App-header > h1 > * {
+  margin-left: 1rem;
+}
+
+.App-header > h1 > label {
+  font-size: initial;
+  font-weight: initial;
+}

@@ -72,6 +72,7 @@ export default function KanbanBoard({
             setIsDragTarget={(isTarget) => setDragTarget(isTarget ? COLUMN_KEY_TODO : null)}
             onDropEvt={handleDrop}
             onAddCard={(newCard) => onAddCard(COLUMN_KEY_TODO, newCard)}
+            onRemoveCard={(item) => onRemoveCard(COLUMN_KEY_TODO, item)}
           />
           <KanbanColumn
             bgColor={COLUMN_BACKGROUND_COLOR.ongoing}
@@ -82,6 +83,7 @@ export default function KanbanBoard({
             setIsDragSource={(isSrc) => setDragSource(isSrc ? COLUMN_KEY_ONGOING : null)}
             setIsDragTarget={(isTarget) => setDragTarget(isTarget ? COLUMN_KEY_ONGOING : null)}
             onDropEvt={handleDrop}
+            onRemoveCard={(item) => onRemoveCard(COLUMN_KEY_ONGOING, item)}
           />
           <KanbanColumn
             bgColor={COLUMN_BACKGROUND_COLOR.done}
@@ -92,7 +94,8 @@ export default function KanbanBoard({
             setIsDragSource={(isSrc) => setDragSource(isSrc ? COLUMN_KEY_DONE : null)}
             setIsDragTarget={(isTarget) => setDragTarget(isTarget ? COLUMN_KEY_DONE : null)}
             onDropEvt={handleDrop}
-          />
+            onRemoveCard={(item) => onRemoveCard(COLUMN_KEY_DONE, item)}
+            />
         </>
       )}
     </main>

@@ -20,6 +20,7 @@ interface KanbanColumnProps {
   setIsDragTarget?: (isTarget: boolean) => void;
   onDropEvt?: () => void;
   onAddCard?: (newCard:KanbanCardData) => void;
+  onRemoveCard?: (item: KanbanCardData) => void;
 }
 
 const kanbanColumnStyle = `
@@ -65,7 +66,8 @@ export default function KanbanColumn({
   setIsDragTarget = () => {},
   setDraggedItem,
   onDropEvt,
-  onAddCard
+  onAddCard,
+  onRemoveCard,
 }: KanbanColumnProps) {
   const [showAdd, setShowAdd] = useState(false);
 
@@ -120,7 +122,7 @@ export default function KanbanColumn({
       <ul>
         {showAdd && <KanbanNewCard onSubmit={handleSubmit} />}
         {cardList.map((card, index) => (
-          <KanbanCard key={`${card.title}-${index}`} {...card} onDragStart={() => setDraggedItem && setDraggedItem(card)} />
+          <KanbanCard key={`${card.title}-${index}`} {...card} onDragStart={() => setDraggedItem && setDraggedItem(card)} onRemove={onRemoveCard} />
         ))}
       </ul>
     </section>

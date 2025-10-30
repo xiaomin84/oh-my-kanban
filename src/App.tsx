@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import KanbanBoard, { COLUMN_KEY_TODO, COLUMN_KEY_ONGOING, COLUMN_KEY_DONE } from "./components/KanbanBoard";
 import type { KanbanCardProps } from "./components/KanbanCard";
+import AdminContext from "./context/AdminContext";
 
 const DATA_STORE_KEY = 'kanban-data-store';
 
@@ -38,6 +39,9 @@ function App() {
   const [ongoingList, setOngoingList] = useState(initialOngoingList);
   const [doneList, setDoneList] = useState(initialDoneList);
   const [loading, setLoading] = useState(true);
+
+  const [isAdmin, setIsAdmin] = useState(false);  
+  const handleToggleAdmin = () => { setIsAdmin(!isAdmin);};
  
   useEffect(() => {
     const data = window.localStorage.getItem(DATA_STORE_KEY);
@@ -83,7 +87,7 @@ function App() {
     };
 
     if (setters[columnKey]) {
-      setters[columnKey]((prev) => prev.filter((existingItem) => existingItem !== item));
+      setters[columnKey]((prev) => prev.filter((existingItem) => existingItem.title !== item.title || existingItem.status !== item.status));
     }
   };
 
@@ -91,10 +95,15 @@ function App() {
     <>
       <div className="App">
         <header className="App-header">
+        <label>           
+           <input type="checkbox" checked={isAdmin} onChange={handleToggleAdmin} />           
+            管理员模式
+        </label>
           <button onClick={handleSaveAll}>保存所有卡片状态</button>
           <h1>我的看板 </h1>
           <img src={reactLogo} className="App-logo" alt="logo" />
         </header>
+        <AdminContext.Provider value={isAdmin}>
         <KanbanBoard
           isLoading={loading}
           todoList={todoList}
@@ -103,6 +112,7 @@ function App() {
           onAddCard={handleAddCardToColumn}
           onRemoveCard={handleRemoveCardFromColumn}
         />
+        </AdminContext.Provider>
       </div>
     </>
   );
