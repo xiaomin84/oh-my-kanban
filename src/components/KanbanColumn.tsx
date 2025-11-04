@@ -84,6 +84,7 @@ export default function KanbanColumn({
  
   return (
     <section
+      data-testid="kanban-column"
       onDragStart={() => {
         setIsDragSource(true);
       }}
